@@ -27,7 +27,11 @@ public:
 	virtual ~BListException() throw() {
 	}
 
+	// E_NO_MEMORY: out of memory exception, thrown if no memory to allocate a node. Catch
+	// std::bad_alloc thrown by new then rethrow it
+	// E_BAD_INDEX: invalid index for "remove" or "operator[]"
 	enum BLIST_EXCEPTION { E_NO_MEMORY, E_BAD_INDEX, E_DATA_ERROR };
+
 };
 
 struct BListStats
@@ -55,6 +59,7 @@ public:
 		int count; // number of items currently in the node
 		T values[Size];
 		BNode() : next(0), prev(0), count(0) {}
+		BNode(BNode* nextNode, BNode* prevNode) : next(nextNode), prev(prevNode), count(0) {}
 	};
 
 	BList();                  // default constructor                        
@@ -92,6 +97,11 @@ private:
 	BNode *tail_; // points to the last node
 
 				  // Other private members that you need
+	BListStats myStats;
+
+	// Helper functions
+	BNode* AllocateNewNode(BNode* next = nullptr, BNode* prev = nullptr);
+	T& GetValue(int index) const;
 
 };
 

@@ -1,6 +1,6 @@
 PRG=gnu.exe
 PRG2=gnu-32.exe
-GCC=g++-5
+GCC=g++
 GCCFLAGS=-Wall -Werror -Wextra -std=c++11 -pedantic -Wconversion -O -Wno-unused-result
 
 OBJECTS0=PRNG.cpp
