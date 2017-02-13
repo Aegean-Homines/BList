@@ -60,6 +60,8 @@ public:
 		T values[Size];
 		BNode() : next(0), prev(0), count(0) {}
 		BNode(BNode* nextNode, BNode* prevNode) : next(nextNode), prev(prevNode), count(0) {}
+
+		BNode(const BNode & rhs);
 	};
 
 	BList();                  // default constructor                        
@@ -101,8 +103,14 @@ private:
 
 	// Helper functions
 	BNode* AllocateNewNode(BNode* next = nullptr, BNode* prev = nullptr);
+	void DeallocateNode(BNode* nodeToRemove);
 	T& GetValue(int index) const;
-
+	BNode* FindItem(int index) const;
+	void Split(BNode* nodeToSplit);
+	void InsertAtNode(BNode* nodeToInsert, const T& value);
+	void RegularLinkedListInsert(const T& value);
+	BNode* FindInsertPosition(const T& value);
+	void CopyHelper(BList const & other);
 };
 
 #include "BList.cpp"

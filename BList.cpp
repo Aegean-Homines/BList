@@ -3,6 +3,16 @@
 
 #include "BList.h"
 
+template < typename T, int Size >
+BList<T, Size>::BNode::BNode ( const BNode& rhs ) {
+	next = nullptr;
+	prev = nullptr;
+	count = rhs.count;
+	for (int i = 0; i < Size; ++i) {
+		values[i] = rhs.values[i];
+	}
+}
+
 template <typename T, int Size>
 BList<T, Size>::BList() : head_(nullptr), tail_(nullptr)
 {
@@ -13,19 +23,32 @@ BList<T, Size>::BList() : head_(nullptr), tail_(nullptr)
 template <typename T, int Size>
 BList<T, Size>::BList(const BList& rhs)
 {
-	std::cout << rhs.GetStats().ArraySize << std::endl;
+	CopyHelper(rhs);
 }
 
 template <typename T, int Size>
 BList<T, Size>::~BList()
 {
+	clear();
 }
 
 template <typename T, int Size>
 BList<T, Size>& BList<T, Size>::operator=(const BList& rhs)
 {
-	std::cout << rhs.GetStats().ArraySize << std::endl;
+	if (this == &rhs) return *this;
+
+	BNode* originalHead = head_;
+
+	CopyHelper(rhs);
+
+	while(originalHead != nullptr) {
+		BNode* temp = originalHead;
+		originalHead = originalHead->next;
+		delete temp;
+	}
+
 	return *this;
+
 }
 
 template <typename T, int Size>
@@ -74,7 +97,7 @@ void BList<T, Size>::push_front(const T& value)
 			head_->values[i + 1] = head_->values[i]; // shifting existing data
 		}
 
-		//head_->values[Size - (++head_->count)] = value; //check In the FAQ, it pushes elements towards the end as it inserts
+		//head_->values[Size - (++head_->count)] = value;
 		head_->values[0] = value;
 		head_->count += 1;
 
@@ -89,31 +112,123 @@ void BList<T, Size>::push_front(const T& value)
 template <typename T, int Size>
 void BList<T, Size>::insert(const T& value)
 {
-	std::cout << value << std::endl;
+
+	// inserting the first element
+	if(!head_) { 
+		push_front(value);
+		return;
+	}
+
+	// if size is 1 => this is a normal linked list
+	// do normal insert without all those fancy things
+	if(Size == 1) {
+		RegularLinkedListInsert(value);
+		return;
+	}
+		
+	BNode* iterator = FindInsertPosition(value);
+
+	// iterator points to the head or intermediate node to insert
+	if(iterator->count == Size) { //at max size => need to split
+		Split(iterator);
+	}
+
+	// Checking which part of the split to insert (left or right)
+	BNode* nextNode = iterator->next;
+	if (nextNode && nextNode->values[0] < value)
+		iterator = nextNode;
+
+	// insert at the iterator at the right place
+	InsertAtNode(iterator, value);
+
 }
 
 template <typename T, int Size>
 void BList<T, Size>::remove(int index)
 {
-	// NOTE FOR IMPLEMENTATION:
-	/*
-	 * When a node contains 0 items, remove the empty node from the list and delete it
-	 */
-	std::cout << index << std::endl;
+
+	if (index > myStats.ItemCount)
+		throw BListException(BListException::BLIST_EXCEPTION::E_BAD_INDEX, "Subscript index is higher than list size");
+
+	if (index < 0)
+		throw BListException(BListException::BLIST_EXCEPTION::E_BAD_INDEX, "Subscript index cannot be a negative value");
+
+	int indexCounter = index;
+	BNode* iterator = head_;
+
+	while (indexCounter >= iterator->count) {
+		indexCounter -= iterator->count;
+		iterator = iterator->next;
+	}
+
+	// will skip the loop if this is the only element
+	for (int i = indexCounter; i < iterator->count - 1; ++i) {
+		iterator->values[i] = iterator->values[i+1];
+	}
+
+	if((iterator->count -= 1) == 0) {
+		DeallocateNode(iterator);
+	}
 
 }
 
 template <typename T, int Size>
 void BList<T, Size>::remove_by_value(const T& value)
 {
-	std::cout << value << std::endl;
+	// TODO improve search
+	int indexCounter = -1;
+	BNode* iterator = head_;
+	bool isFound = false;
+
+	while (iterator != nullptr) {
+
+		for (indexCounter = 0; indexCounter < iterator->count; ++indexCounter) {
+			if (value == iterator->values[indexCounter]) {
+				isFound = true;
+				break;
+			}
+		}
+
+		if(isFound) {
+			break;
+		}
+		iterator = iterator->next;
+	}
+
+	if (indexCounter < 0 || iterator == nullptr)
+		return;
+
+	--myStats.ItemCount;
+
+	// will skip the loop if this is the only element
+	for (int i = indexCounter; i < iterator->count - 1; ++i) {
+		iterator->values[i] = iterator->values[i + 1];
+	}
+
+	if ((iterator->count -= 1) == 0) {
+		DeallocateNode(iterator);
+	}
+
 }
 
 template <typename T, int Size>
 int BList<T, Size>::find(const T& value) const
 {
-	std::cout << value << std::endl;
-	return 5;
+	// TODO improve search
+	int indexCounter = 0;
+	BNode* iterator = head_;
+	while (iterator != nullptr ) {
+		for (int i = 0; i < iterator->count; ++i) {
+			if (value == iterator->values[i]) {
+				return indexCounter + i;
+			}
+		}
+
+		indexCounter += iterator->count;
+		iterator = iterator->next;
+	}
+
+	return -1;
 }
 
 template <typename T, int Size>
@@ -137,6 +252,16 @@ size_t BList<T, Size>::size() const
 template <typename T, int Size>
 void BList<T, Size>::clear()
 {
+	BNode* iterator;
+	while(head_) {
+		iterator = head_;
+		head_ = head_->next;
+
+		delete iterator;
+	}
+
+	myStats.ItemCount = 0;
+	myStats.NodeCount = 0;
 }
 
 template <typename T, int Size>
@@ -148,8 +273,39 @@ BListStats BList<T, Size>::GetStats() const
 template < typename T, int Size >
 typename BList<T, Size>::BNode* BList<T, Size>::AllocateNewNode ( BNode* next, BNode* prev ) {
 	BNode* newNode = new BNode(next, prev);
+	if(next)
+		next->prev = newNode;
+	if(prev)
+		prev->next = newNode;
+
 	++myStats.NodeCount;
 	return newNode;
+}
+
+template<typename T, int Size>
+void BList<T, Size>::DeallocateNode(BNode * nodeToRemove)
+{
+
+	if (nodeToRemove == head_) {
+		head_ = head_->next;
+		if(head_)
+			head_->prev = nullptr;
+	}
+	else if (nodeToRemove == tail_) {
+		tail_ = tail_->prev;
+		if(tail_)
+			tail_->next = nullptr;
+	}else {
+		BNode* nextItem = nodeToRemove->next;
+		BNode* prevItem = nodeToRemove->prev;
+
+		nextItem->prev = prevItem;
+		prevItem->next = nextItem;
+	}
+
+	--myStats.NodeCount;
+	delete nodeToRemove;
+
 }
 
 template<typename T, int Size>
@@ -164,12 +320,25 @@ T & BList<T, Size>::GetValue(int index) const
 	if (index == 0)
 		return head_->values[0];
 
-	int listIndex = index / myStats.ArraySize;
+	int indexCounter = index;
+	BNode* iterator = head_;
+
+	while(indexCounter >= iterator->count) {
+		indexCounter -= iterator->count;
+		iterator = iterator->next;
+	}
+
+	return iterator->values[indexCounter];
+
+
+	// Beautiful method to find the indexed element fast
+	// Unfortunately only works if all nodes are filled
+	/*int listIndex = index / myStats.ArraySize;
 	int arrayIndex = index % myStats.ArraySize;
 	int listMidIndex = (myStats.NodeCount - 1) / 2;
 
 	BNode* listIterator;
-
+	// check a way to make this only one block? iterator progression seems to be the problem
 	if (listMidIndex < listIndex) { // the element is closer to the tail
 		listIterator = tail_;
 		int i = myStats.NodeCount - 1;
@@ -187,8 +356,179 @@ T & BList<T, Size>::GetValue(int index) const
 	}
 
 	// At this point, listIterator should point to the node the index is in
-	return listIterator->values[arrayIndex];
+	return listIterator->values[arrayIndex];*/
 
+}
+
+template<typename T, int Size>
+typename BList<T, Size>::BNode * BList<T, Size>::FindItem(int index) const
+{
+	if (index > myStats.ItemCount)
+		throw BListException(BListException::BLIST_EXCEPTION::E_BAD_INDEX, "Subscript index is higher than list size");
+
+	if (index < 0)
+		throw BListException(BListException::BLIST_EXCEPTION::E_BAD_INDEX, "Subscript index cannot be a negative value");
+
+	if (index == 0)
+		return head_->values[0];
+
+	int indexCounter = index;
+	BNode* iterator = head_;
+
+	while (indexCounter >= iterator->count) {
+		indexCounter -= iterator->count;
+		iterator = iterator->next;
+	}
+
+	return iterator;
+}
+
+template<typename T, int Size>
+void BList<T, Size>::Split(BNode * nodeToSplit)
+{
+	// Create a new node between
+	BNode* newNode = AllocateNewNode(nodeToSplit->next, nodeToSplit);
+
+	// Find indices to move elements between
+	int middleIndex = (Size) / 2;
+	int indexForNewNode = 0;
+	int indexForSource = middleIndex;
+
+	// move half of the split node
+	while(indexForSource < Size) {
+		newNode->values[indexForNewNode++] = nodeToSplit->values[indexForSource++];
+	}
+
+	// update node information
+	nodeToSplit->count = middleIndex;
+	newNode->count = indexForNewNode;
+
+	// adjust if tail was split
+	if (tail_->next)
+		tail_ = tail_->next;
+}
+
+// NOTE: assumes the array is not full
+// will be split if full before
+template < typename T, int Size >
+void BList<T, Size>::InsertAtNode ( BNode* nodeToInsert, const T& value ) {
+
+	// TODO divide by half optimization
+	//int halfIndex = nodeToInsert->count / 2;
+
+	int indexToInsert = 0;
+
+	// will quit loop when index = the index to insert
+	while (indexToInsert < nodeToInsert->count && nodeToInsert->values[indexToInsert] < value) {
+		++indexToInsert;
+	};
+
+	// shift everything
+	for (int counter = nodeToInsert->count; counter >= indexToInsert; --counter) {
+		nodeToInsert->values[counter] = nodeToInsert->values[counter - 1];
+	}
+
+	nodeToInsert->values[indexToInsert] = value;
+	nodeToInsert->count += 1;
+	++myStats.ItemCount;
+
+	
+}
+
+template<typename T, int Size>
+void BList<T, Size>::RegularLinkedListInsert(const T & value)
+{
+	BNode* iterator;
+	// precheck if the value is higher than tail's beginning -> I have to insert at the tail
+	if (tail_->values[0] < value) { // inserting after tail
+		push_back(value);
+	}
+	else if (value < head_->values[0]) { //inserting before head
+		push_front(value);
+	}else{ //TODO divide by half optimization
+
+		iterator = head_->next;
+		while (iterator->values[0] < value) {
+			iterator = iterator->next;
+		}
+		
+		iterator = iterator->prev;
+
+		BNode* newNode = AllocateNewNode(iterator->next, iterator);
+		newNode->values[0] = value;
+		newNode->count = 1;
+
+		++myStats.ItemCount;
+	}
+
+	
+
+}
+
+template<typename T, int Size>
+typename BList<T, Size>::BNode * BList<T, Size>::FindInsertPosition(const T & value)
+{
+	BNode* retVal;
+	// precheck if the value is higher than tail's beginning -> I have to insert at the tail
+	if (tail_->values[0] < value) {
+		retVal = tail_;
+	}
+	else {
+		retVal = head_;
+		while (retVal->values[0] < value) {
+			retVal = retVal->next;
+		}
+
+		/*	Two conditions for reaching here
+		*	1-) prevNode == nullptr -> inserting at the head node, continue with the procedure normally
+		*	2-) can't work around splitting and shifting
+		*	As a result, use the current node
+		*/
+
+		BNode* prevNode = retVal->prev;
+		// either prev node still has space or both are full
+		if (prevNode && (value < prevNode->values[prevNode->count - 1] || prevNode->count != Size || retVal->count == Size)) {
+			retVal = prevNode;
+		}
+	}
+
+	return retVal;
+}
+
+template<typename T, int Size>
+void BList<T, Size>::CopyHelper(BList const & other)
+{
+	try {
+		if(other.head_) {
+			head_ = new BNode(*other.head_);
+			head_->prev = nullptr;
+			BNode* currentNode = head_->next;
+			BNode* prevNode = head_;
+			BNode* otherCurrent = other.head_->next;
+			while(otherCurrent) {
+				currentNode = new BNode(*otherCurrent);
+				prevNode->next = currentNode;
+				currentNode = currentNode->next;
+				prevNode = prevNode->next;
+				otherCurrent = otherCurrent->next;
+			}
+
+			tail_ = prevNode;
+			tail_->next = nullptr;
+		}
+	}catch(std::bad_alloc& e) {
+		BNode* iterator = head_;
+
+		while(iterator) {
+			BNode* next = iterator->next;
+			delete iterator;
+			iterator = next;
+		}
+
+		throw BListException(BListException::BLIST_EXCEPTION::E_DATA_ERROR, std::string("Exception thrown during copy construction: ") + e.what());
+	}
+
+	myStats = other.myStats;
 }
 
 template <typename T, int Size>
