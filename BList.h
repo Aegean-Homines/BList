@@ -1,3 +1,13 @@
+/*!
+* \file BList.h
+* \author Egemen Koku
+* \date 12 Feb 2017
+* \brief Interface of @b BList.cpp
+*
+* \copyright Digipen Institute of Technology
+* \mainpage BList Interface
+*
+*/
 
 ////////////////////////////////////////////////////////////////////////////////
 #ifndef BLIST_H
@@ -105,7 +115,6 @@ private:
 	BNode* AllocateNewNode(BNode* next = nullptr, BNode* prev = nullptr);
 	void DeallocateNode(BNode* nodeToRemove);
 	T& GetValue(int index) const;
-	BNode* FindItem(int index) const;
 	void Split(BNode* nodeToSplit);
 	void InsertAtNode(BNode* nodeToInsert, const T& value);
 	void RegularLinkedListInsert(const T& value);

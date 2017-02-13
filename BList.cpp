@@ -1,8 +1,23 @@
-#ifndef BLIST_CPP_
+/*!
+* \file BList.cpp
+* \author Egemen Koku
+* \date 12 Feb 2017
+* \brief Implementation of @b BList.h
+*
+* \copyright Digipen Institute of Technology
+* \mainpage BList Implementation
+*
+*/
+
+/*#ifndef BLIST_CPP_
 #define BLIST_CPP_
 
-#include "BList.h"
+#include "BList.h" */
 
+/**
+* @brief Copy Constructor for BNode class
+* @param rhs Other BNode to be copied from
+*/
 template < typename T, int Size >
 BList<T, Size>::BNode::BNode ( const BNode& rhs ) {
 	next = nullptr;
@@ -13,6 +28,9 @@ BList<T, Size>::BNode::BNode ( const BNode& rhs ) {
 	}
 }
 
+/**
+* @brief Default Const. for BList class
+*/
 template <typename T, int Size>
 BList<T, Size>::BList() : head_(nullptr), tail_(nullptr)
 {
@@ -20,18 +38,29 @@ BList<T, Size>::BList() : head_(nullptr), tail_(nullptr)
 	myStats.NodeSize = sizeof(BNode);
 }
 
+/**
+* @brief Copy Constructor for BList class
+* @param rhs other BList to be copied from
+*/
 template <typename T, int Size>
 BList<T, Size>::BList(const BList& rhs)
 {
 	CopyHelper(rhs);
 }
 
+/**
+* @brief Dest. for BList class
+*/
 template <typename T, int Size>
 BList<T, Size>::~BList()
 {
 	clear();
 }
 
+/**
+* @brief Assignment operator
+* @param rhs other BList to be copied from
+*/
 template <typename T, int Size>
 BList<T, Size>& BList<T, Size>::operator=(const BList& rhs)
 {
@@ -51,6 +80,11 @@ BList<T, Size>& BList<T, Size>::operator=(const BList& rhs)
 
 }
 
+/**
+* @brief Function to push back values to the tail of the list
+* @param value Value to be pushed
+* @throws BListException
+*/
 template <typename T, int Size>
 void BList<T, Size>::push_back(const T& value)
 {
@@ -76,6 +110,11 @@ void BList<T, Size>::push_back(const T& value)
 	++myStats.ItemCount;
 }
 
+/**
+* @brief Function to push front values to the head of the list
+* @param value Value to be pushed
+* @throws BListException
+*/
 template <typename T, int Size>
 void BList<T, Size>::push_front(const T& value)
 {
@@ -109,6 +148,11 @@ void BList<T, Size>::push_front(const T& value)
 	++myStats.ItemCount;
 }
 
+/**
+* @brief Function to insert values to the blist
+* @param value Value to be inserted
+* @throws BListException
+*/
 template <typename T, int Size>
 void BList<T, Size>::insert(const T& value)
 {
@@ -143,6 +187,11 @@ void BList<T, Size>::insert(const T& value)
 
 }
 
+/**
+* @brief Function to remove values from the blist
+* @param index Index of the value to be removed
+* @throws BListException
+*/
 template <typename T, int Size>
 void BList<T, Size>::remove(int index)
 {
@@ -172,6 +221,10 @@ void BList<T, Size>::remove(int index)
 
 }
 
+/**
+* @brief Function to remove values from the blist
+* @param value Value to be removed
+*/
 template <typename T, int Size>
 void BList<T, Size>::remove_by_value(const T& value)
 {
@@ -211,6 +264,11 @@ void BList<T, Size>::remove_by_value(const T& value)
 
 }
 
+/**
+* @brief Function to find values in the blist
+* @param value Value to be found
+* @returns returns index, -1 if not found
+*/
 template <typename T, int Size>
 int BList<T, Size>::find(const T& value) const
 {
@@ -231,24 +289,41 @@ int BList<T, Size>::find(const T& value) const
 	return -1;
 }
 
+/**
+* @brief Random access operator for blist
+* @param index Index of the data
+* @returns value stored in the list
+*/
 template <typename T, int Size>
 T& BList<T, Size>::operator[](int index)
 {
 	return GetValue(index);
 }
 
+/**
+* @brief Random access operator for blist
+* @param index Index of the data
+* @returns value stored in the list
+*/
 template <typename T, int Size>
 const T& BList<T, Size>::operator[](int index) const
 {
 	return GetValue(index);
 }
 
+/**
+* @brief Size of the list
+* @returns number of nodes in the list
+*/
 template <typename T, int Size>
 size_t BList<T, Size>::size() const
 {
 	return myStats.ItemCount;
 }
 
+/**
+* @brief Removes everything in the list
+*/
 template <typename T, int Size>
 void BList<T, Size>::clear()
 {
@@ -264,12 +339,22 @@ void BList<T, Size>::clear()
 	myStats.NodeCount = 0;
 }
 
+/**
+* @brief Getter for list stats
+* @returns list stats
+*/
 template <typename T, int Size>
 BListStats BList<T, Size>::GetStats() const
 {
 	return myStats;
 }
 
+/**
+* @brief Helper function for allocating new nodes
+* @param next Next Pointer to be set for the new node
+* @param prev Prev Pointer to be set for the new node
+* @returns allocated node
+*/
 template < typename T, int Size >
 typename BList<T, Size>::BNode* BList<T, Size>::AllocateNewNode ( BNode* next, BNode* prev ) {
 	BNode* newNode = new BNode(next, prev);
@@ -282,6 +367,10 @@ typename BList<T, Size>::BNode* BList<T, Size>::AllocateNewNode ( BNode* next, B
 	return newNode;
 }
 
+/**
+* @brief Helper function for deallocating a node
+* @param nodeToRemove Node to be deallocated
+*/
 template<typename T, int Size>
 void BList<T, Size>::DeallocateNode(BNode * nodeToRemove)
 {
@@ -308,6 +397,11 @@ void BList<T, Size>::DeallocateNode(BNode * nodeToRemove)
 
 }
 
+/**
+* @brief Helper function for getting a value at index
+* @param index Index of the data
+* @returns data
+*/
 template<typename T, int Size>
 T & BList<T, Size>::GetValue(int index) const
 {
@@ -360,29 +454,10 @@ T & BList<T, Size>::GetValue(int index) const
 
 }
 
-template<typename T, int Size>
-typename BList<T, Size>::BNode * BList<T, Size>::FindItem(int index) const
-{
-	if (index > myStats.ItemCount)
-		throw BListException(BListException::BLIST_EXCEPTION::E_BAD_INDEX, "Subscript index is higher than list size");
-
-	if (index < 0)
-		throw BListException(BListException::BLIST_EXCEPTION::E_BAD_INDEX, "Subscript index cannot be a negative value");
-
-	if (index == 0)
-		return head_->values[0];
-
-	int indexCounter = index;
-	BNode* iterator = head_;
-
-	while (indexCounter >= iterator->count) {
-		indexCounter -= iterator->count;
-		iterator = iterator->next;
-	}
-
-	return iterator;
-}
-
+/**
+* @brief Helper function for splitting a node in two
+* @param nodeToSplit node to be split
+*/
 template<typename T, int Size>
 void BList<T, Size>::Split(BNode * nodeToSplit)
 {
@@ -408,8 +483,13 @@ void BList<T, Size>::Split(BNode * nodeToSplit)
 		tail_ = tail_->next;
 }
 
-// NOTE: assumes the array is not full
-// will be split if full before
+
+/**
+* @brief Helper function for inserting a value at a node
+* @param nodeToInsert node to insert value at
+* @param value data to be inserted
+* @warning assumes the array is not full
+*/
 template < typename T, int Size >
 void BList<T, Size>::InsertAtNode ( BNode* nodeToInsert, const T& value ) {
 
@@ -435,6 +515,11 @@ void BList<T, Size>::InsertAtNode ( BNode* nodeToInsert, const T& value ) {
 	
 }
 
+
+/**
+* @brief Helper function for linked list insert when size is 1
+* @param value data to be inserted
+*/
 template<typename T, int Size>
 void BList<T, Size>::RegularLinkedListInsert(const T & value)
 {
@@ -461,10 +546,13 @@ void BList<T, Size>::RegularLinkedListInsert(const T & value)
 		++myStats.ItemCount;
 	}
 
-	
-
 }
 
+/**
+* @brief Helper function for finding where to insert the value
+* @param value data to be inserted
+* @returns node to be inserted at
+*/
 template<typename T, int Size>
 typename BList<T, Size>::BNode * BList<T, Size>::FindInsertPosition(const T & value)
 {
@@ -495,6 +583,10 @@ typename BList<T, Size>::BNode * BList<T, Size>::FindInsertPosition(const T & va
 	return retVal;
 }
 
+/**
+* @brief Helper function for copying data from other to this
+* @param other blist to be copied from
+*/
 template<typename T, int Size>
 void BList<T, Size>::CopyHelper(BList const & other)
 {
@@ -531,16 +623,24 @@ void BList<T, Size>::CopyHelper(BList const & other)
 	myStats = other.myStats;
 }
 
+/**
+* @brief Getter for the size of a node
+* @returns size of each node
+*/
 template <typename T, int Size>
 size_t BList<T, Size>::nodesize(void)
 {
 	return sizeof(BNode);
 }
 
+/**
+* @brief Getter for the head pointer
+* @returns the head of the list
+*/
 template <typename T, int Size>
 const typename BList<T, Size>::BNode* BList<T, Size>::GetHead() const
 {
 	return head_;
 }
 
-#endif
+//#endif
